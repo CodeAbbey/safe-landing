@@ -1,24 +1,16 @@
 var term = new JsMonoTerm({selector: "#terminal", w: 60, h: 20});
 
-var st = {
-    mass: 7500,
-    fuel: 7500,
-    height: 200000,
-    speed: 1600,
-    gravity: 1.62,
-    exhaust: 2800,
-    time: 0,
-    tStep: 10
-};
+var st = {};
 
 function report() {
     if (st.fuel <= 0) {
-        term.printl('No more fuel!');
+        term.println('*** Fuel tanks are empty ***');
     }
     if (st.height <= 0) {
-        term.println('Touch down!');
+        term.println();
+        term.println('Touch down at ' + st.time + ' sec');
         term.println('Landing speed was: ' + Math.round(st.speed) + ' m/s');
-        if (st.speed < 5) {
+        if (st.speed < 10) {
             term.println('Perfect landing, your contract is prolonged!');
             term.println('Congratulations!');
         } else if (st.speed < 50) {
@@ -26,20 +18,41 @@ function report() {
             term.println('Waiting for the rescue team...');
         } else {
             term.println('CRASH! Your landing created a new crater');
-            term.println(Math.round(st.speed * 4) + ' meters deep!');
+            term.println(Math.round(st.speed * 0.2727) + ' meters deep!');
         }
+        return false;
     }
-    term.printf('%4d   %8d   %8d   %8d', st.time,
-            Math.round(st.height), Math.round(st.speed), Math.round(st.fuel));
+    term.printf('%4d   %8d   %8d   %8d   %12s', st.time,
+            Math.round(st.height), Math.round(st.speed), Math.round(st.fuel),
+            ('' + gravity()).substring(0, 4));
     term.println();
-    term.print('new burning rate: ');
+    term.print('burning rate: ');
+    return true;
 }
 
 function gets(str) {
     var rate = parseFloat(str);
-    makeStep(rate);
-    report();
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+        term.println('Please enter a value between 0 and 100...');
+    } else {
+        makeStep(rate);
+        if (!report()) {
+            term.println();
+            term.println('Hit "ENTER" to try again...');
+            term.gets = getsAgain;
+            return;
+        }
+    }
     term.gets = gets;
+}
+
+function getsAgain(str) {
+    term.clear();
+    init();
+}
+
+function gravity() {
+    return st.gravity * Math.pow(st.radius, 2) / Math.pow(st.radius + st.height, 2);
 }
 
 function makeStep(rate) {
@@ -59,18 +72,34 @@ function makeStep(rate) {
         }
         dv = st.exhaust * dm / (st.mass + st.fuel);
         st.fuel -= dm;
-        st.speed += st.gravity * dt - dv;
+        var g = gravity();
+        st.speed += g * dt - dv;
     }
     st.time += st.tStep;
 }
 
-term.println('You are in a rocket approaching the Moon!');
-term.println('Main computer failed (it was not built by DEC)!');
-term.println('You are to perform manual landing by controlling engines');
-term.println('specify fuel burning rate (kgs per second) for each 10 sec');
-term.println('and try to touch down with safe speed. Good luck!!!');
-term.println();
-term.println('Time   Height(m)   Speed(m/s)   Fuel(kg)');
-report();
-term.gets = gets;
+function init() {
+    st.mass = 7500;
+    st.fuel = 7500;
+    st.height = 200000;
+    st.speed = 1600;
+    st.gravity = 1.622;
+    st.exhaust = 2800;
+    st.time = 0;
+    st.tStep = 10;
+    st.radius = 1737100;
+    
+    term.println('You are in a rocket approaching the Moon!');
+    term.println('Main computer failed (it was not built by DEC)!');
+    term.println('You are to perform manual landing by controlling engines');
+    term.println('specify fuel burning rate (kgs per second) for each 10 sec');
+    term.println('and try to touch down with safe speed. Good luck!!!');
+    term.println('Rocket weight: ' + st.mass + ' kg');
+    term.println();
+    term.println('Time   Height(m)   Speed(m/s)   Fuel(kg)   Gravity(m/s^2)');
+    report();
+    term.gets = gets;
+}
+
+init();
 
