@@ -141,6 +141,9 @@ JsMonoTerm.prototype.printf = function() {
 }
 
 JsMonoTerm.prototype.key = function(c) {
+    if (c.charCode == 32 || c.charCode == 8) {
+        c.preventDefault();
+    }
     c = c.charCode;
     if (c >= 32) {
         var ch = String.fromCharCode(c);
